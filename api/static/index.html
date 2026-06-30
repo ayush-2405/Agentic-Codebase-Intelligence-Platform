@@ -32,7 +32,7 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 13px;
   line-height: 1.6;
   min-height: 100vh;
@@ -87,26 +87,6 @@ header {
   display: flex; align-items: center; justify-content: center;
   font-size: 14px;
 }
-
-.header-status {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--dim);
-}
-
-.status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--border2);
-  transition: background 0.3s;
-}
-.status-dot.ready { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
-.status-dot.busy  { background: var(--warn); animation: pulse 1s infinite; }
-
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
 /* ── Layout ──────────────────────────────────────────────────────── */
 .app {
@@ -382,12 +362,30 @@ header {
 }
 .file-item:hover { color: var(--text); background: rgba(88,166,255,0.05); border-left-color: var(--accent); }
 .file-item.active { color: #fff; background: rgba(88,166,255,0.12); border-left-color: var(--accent2); }
+.file-item.focused { background: rgba(63,185,80,0.12); border-left-color: #3fb950; color: #f8fff4; }
+.file-item.focused .focus-btn { color: #0b1b0d; background: #3fb950; }
 .file-ext { font-size: 9px; background: var(--border); padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
+.file-item .focus-btn {
+  margin-left: auto;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--dim);
+  font-size: 10px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.file-item .focus-btn:hover {
+  background: rgba(88,166,255,0.12);
+  color: var(--text);
+}
 .file-ext.py  { color: #4ec9b0; }
 .file-ext.js  { color: #d7ba7d; }
 .file-ext.ts  { color: var(--accent); }
 .file-ext.go  { color: #9cdcfe; }
 .file-ext.rs  { color: #ce9178; }
+.file-ext.html { color: #ff7eb6; }
 
 /* History */
 .history-list {
@@ -566,19 +564,32 @@ header {
 
 /* Markdown rendering */
 .answer-bubble h1, .answer-bubble h2, .answer-bubble h3 {
-  font-family: var(--sans);
-  font-weight: 700;
+  font-family: var(--mono);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
   margin: 1.2em 0 0.4em;
   color: #fff;
 }
 .answer-bubble h1 { font-size: 18px; }
 .answer-bubble h2 { font-size: 16px; }
 .answer-bubble h3 { font-size: 14px; }
-.answer-bubble p  { margin-bottom: 0.8em; }
-.answer-bubble ul, .answer-bubble ol { padding-left: 20px; margin-bottom: 0.8em; }
-.answer-bubble li { margin-bottom: 4px; }
+.answer-bubble p  { margin-bottom: 1.1em; }
+.answer-bubble ul, .answer-bubble ol { padding-left: 24px; margin-bottom: 1.4em; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.answer-bubble li { margin-bottom: 8px; line-height: 1.6; }
 .answer-bubble a  { color: var(--accent); text-decoration: none; }
 .answer-bubble a:hover { text-decoration: underline; }
+.diff-report {
+  word-break: break-word;
+  white-space: normal;
+}
+.diff-report h2, .diff-report h3 {
+  margin-top: 1.4em;
+  margin-bottom: 0.55em;
+}
+.diff-report p { margin-bottom: 1em; }
+.diff-report ul, .diff-report ol { padding-left: 28px; margin-bottom: 1.2em; }
+.diff-report li { margin-bottom: 0.75em; }
 .answer-bubble .citation-link {
   display: inline-flex;
   align-items: center;
@@ -706,14 +717,14 @@ header {
   border-radius: 10px;
   padding: 12px 16px;
   color: var(--text);
-  font-family: var(--mono);
-  font-size: 13px;
+  font-family: var(--sans);
+  font-size: 14px;
   resize: none;
   outline: none;
   min-height: 48px;
   max-height: 200px;
-  transition: border-color 0.2s;
-  line-height: 1.5;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  line-height: 1.6;
 }
 .query-input::placeholder { color: var(--dim); }
 .query-input:focus { border-color: var(--accent); }
@@ -721,24 +732,51 @@ header {
 
 .send-btn {
   width: 48px; height: 48px;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--purple));
   border: none;
-  border-radius: 10px;
+  border-radius: 14px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  transition: all 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
   color: #0d1117;
+  box-shadow: 0 8px 20px rgba(88,166,255,0.18);
 }
-.send-btn:hover { background: #79c0ff; transform: translateY(-1px); }
-.send-btn:disabled { background: var(--border2); cursor: not-allowed; transform: none; }
-.send-btn svg { width: 18px; height: 18px; }
+.send-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 25px rgba(88,166,255,0.24); }
+.send-btn.stop { background: linear-gradient(135deg, #f85149, #d29922); color: #fff; }
+.send-btn.stop:hover { background: linear-gradient(135deg, #fb7185, #e7b46b); }
+.send-btn:disabled { background: var(--border2); cursor: not-allowed; transform: none; box-shadow: none; }
+.send-btn svg { width: 20px; height: 20px; }
 
 .input-hint {
   font-size: 10px;
   color: var(--dim);
   margin-top: 8px;
   text-align: center;
+}
+
+.focus-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-top: 10px;
+  background: rgba(56, 69, 96, 0.35);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+}
+
+.focus-banner span {
+  font-size: 12px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.focus-banner strong {
+  color: #fff;
 }
 
 .repo-select {
@@ -937,10 +975,58 @@ header {
   overflow: hidden;
 }
 
+.graph-tooltip {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  min-width: 200px;
+  max-width: 280px;
+  background: rgba(10, 14, 24, 0.95);
+  border: 1px solid rgba(110, 123, 200, 0.25);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  color: #c9d1d9;
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.graph-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.graph-tooltip h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #fff;
+}
+
+.graph-tooltip .meta-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.graph-tooltip .meta-line span {
+  color: var(--dim);
+}
+
 .graph-svg {
   width: 100%;
   height: 100%;
   min-height: 480px;
+  background: radial-gradient(circle at 20% 20%, rgba(88,166,255,0.06), transparent 22%), linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+}
+
+.graph-svg text {
+  font-feature-settings: 'lnum';
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
 }
 
 .graph-node-meta {
@@ -1006,11 +1092,6 @@ header {
   <div class="logo">
     <div class="logo-icon">⬡</div>
     ACIP
-  </div>
-  <span style="color:var(--dim);font-size:11px;letter-spacing:0.5px">Agentic Codebase Intelligence Platform</span>
-  <div class="header-status">
-    <div class="status-dot" id="statusDot"></div>
-    <span id="statusText">No repo loaded</span>
   </div>
 </header>
 
@@ -1134,7 +1215,7 @@ header {
           onkeydown="handleKey(event)"
           oninput="autoResize(this)"
         ></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendQuery()" disabled>
+        <button class="send-btn" id="sendBtn" onclick="busy ? stopQuery() : sendQuery()" disabled title="Send query">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"/>
             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -1142,6 +1223,10 @@ header {
         </button>
       </div>
       <div class="input-hint">Enter to send · Shift+Enter for newline</div>
+      <div id="focusBanner" class="focus-banner" style="display:none">
+        <span>Focused file: <strong id="focusFileName"></strong></span>
+        <button class="mini-btn" onclick="clearFileFocus()">Clear focus</button>
+      </div>
     </div>
     </div>
 
@@ -1194,6 +1279,7 @@ header {
           </div>
         </div>
         <div class="graph-canvas">
+          <div id="graphTooltip" class="graph-tooltip"></div>
           <svg id="graphSvg" class="graph-svg"></svg>
         </div>
       </div>
@@ -1230,6 +1316,8 @@ let busy    = false;
 let currentView = 'query';
 let graphCache = null;
 let graphMode = 'connected';
+let activeFileFocus = null;
+let currentQueryAbortController = null;
 const INGEST_PHASES = [
   { id: 'clone', label: 'Clone repository', icon: '1' },
   { id: 'load', label: 'Scan source files', icon: '2' },
@@ -1323,13 +1411,16 @@ async function sendQuery() {
   hideWelcome();
 
   setBusy(true);
+  updateSendButton(true);
   const thinkEl = appendThinking();
+  currentQueryAbortController = new AbortController();
 
   try {
     const resp = await fetch('/api/query', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({query: q})
+      body: JSON.stringify({query: q, focus_file: activeFileFocus}),
+      signal: currentQueryAbortController.signal,
     });
 
     if (!resp.ok) {
@@ -1370,8 +1461,24 @@ async function sendQuery() {
     });
   } catch (err) {
     thinkEl.remove();
-    appendErrorMsg(err && err.message ? err.message : 'Query stream failed');
+    if (err.name === 'AbortError') {
+      appendErrorMsg('Query stopped.');
+    } else {
+      appendErrorMsg(err && err.message ? err.message : 'Query stream failed');
+    }
     setBusy(false);
+  } finally {
+    currentQueryAbortController = null;
+    updateSendButton(false);
+  }
+}
+
+function stopQuery() {
+  if (currentQueryAbortController) {
+    currentQueryAbortController.abort();
+    setBusy(false);
+    updateSendButton(false);
+    currentQueryAbortController = null;
   }
 }
 
@@ -1674,6 +1781,8 @@ function renderGraph(data) {
   }
 
   const svg = d3.select('#graphSvg');
+  const tooltip = d3.select('#graphTooltip');
+  tooltip.classed('visible', false).style('opacity', 0).html('');
   svg.selectAll('*').remove();
   const width = svg.node().clientWidth || 800;
   const height = svg.node().clientHeight || 520;
@@ -1687,10 +1796,12 @@ function renderGraph(data) {
   svg.call(zoom);
 
   const simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d => d.id).distance(d => 45 + Math.min(90, ((d.source.degree || 0) + (d.target.degree || 0)) * 3)))
-    .force('charge', d3.forceManyBody().strength(d => -90 - ((d.degree || 0) * 22)))
-    .force('center', d3.forceCenter(width / 2, height / 2));
-  simulation.force('collision', d3.forceCollide().radius(d => Math.max(12, 8 + (d.degree || 0) * 1.5)));
+    .force('link', d3.forceLink(links).id(d => d.id).distance(d => 60 + Math.min(120, ((d.source.degree || 0) + (d.target.degree || 0)) * 4)))
+    .force('charge', d3.forceManyBody().strength(d => -120 - ((d.degree || 0) * 30)))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('x', d3.forceX(width / 2).strength(0.05))
+    .force('y', d3.forceY(height / 2).strength(0.05));
+  simulation.force('collision', d3.forceCollide().radius(d => Math.max(16, 10 + (d.degree || 0) * 2)));
 
   const link = root.append('g')
     .attr('stroke', '#2a3445')
@@ -1704,7 +1815,7 @@ function renderGraph(data) {
   const labelNodes = nodes
     .slice()
     .sort((a, b) => (b.degree || 0) - (a.degree || 0))
-    .slice(0, Math.min(18, nodes.length));
+    .slice(0, Math.min(12, nodes.length));
 
   const labels = root.append('g')
     .selectAll('text')
@@ -1714,30 +1825,57 @@ function renderGraph(data) {
     .attr('fill', '#9fb3c8')
     .attr('font-size', 10)
     .attr('font-family', 'JetBrains Mono')
+    .attr('opacity', 0.85)
     .attr('pointer-events', 'none')
-    .text(d => d.label);
+    .text(d => {
+      const parts = d.label.split('/');
+      return parts.length > 1 ? parts[parts.length - 1] : d.label;
+    });
 
   const node = root.append('g')
-    .selectAll('circle')
+    .selectAll('g.node-group')
     .data(nodes)
     .enter()
-    .append('circle')
-    .attr('r', d => Math.max(4, Math.min(15, 4 + (d.degree || 0) * 0.8)))
-    .attr('fill', d => d.degree > 6 ? '#3fb950' : d.in_degree > d.out_degree ? '#d29922' : '#58a6ff')
-    .attr('stroke', '#c9d1d9')
-    .attr('stroke-width', 1)
+    .append('g')
+    .attr('class', 'node-group')
     .style('cursor', 'pointer')
-    .on('mouseenter', (_, d) => {
+    .on('mouseover', (event, d) => {
       labels
         .filter(n => n.id === d.id)
         .attr('fill', '#ffffff')
-        .attr('font-size', 11);
+        .attr('font-size', 12)
+        .attr('opacity', 1);
+      d3.select(event.currentTarget).select('circle')
+        .attr('stroke', '#79c0ff')
+        .attr('stroke-width', 2.2);
+      const [x, y] = d3.pointer(event, svg.node());
+      tooltip.html(
+        `<h4>${escHtml(d.label)}</h4>` +
+        `<div class="meta-line"><span>Full path:</span><strong>${escHtml(d.path)}</strong></div>` +
+        `<div class="meta-line"><span>Degree:</span><strong>${d.degree || 0}</strong></div>` +
+        `<div class="meta-line"><span>Imports:</span><strong>${d.out_degree || 0}</strong></div>` +
+        `<div class="meta-line"><span>Imported by:</span><strong>${d.in_degree || 0}</strong></div>`
+      )
+      .style('left', `${Math.min(width - 280, x + 18)}px`)
+      .style('top', `${Math.max(12, y + 18)}px`)
+      .classed('visible', true);
     })
-    .on('mouseleave', (_, d) => {
+    .on('mousemove', (event, d) => {
+      const [x, y] = d3.pointer(event, svg.node());
+      tooltip
+        .style('left', `${Math.min(width - 260, x + 18)}px`)
+        .style('top', `${Math.max(12, y + 18)}px`);
+    })
+    .on('mouseout', (event, d) => {
       labels
         .filter(n => n.id === d.id)
         .attr('fill', '#9fb3c8')
-        .attr('font-size', 10);
+        .attr('font-size', 10)
+        .attr('opacity', 0.8);
+      d3.select(event.currentTarget).select('circle')
+        .attr('stroke', '#c9d1d9')
+        .attr('stroke-width', 1);
+      tooltip.classed('visible', false).style('opacity', 0);
     })
     .on('click', (_, d) => {
       document.getElementById('graphMeta').innerHTML = `
@@ -1746,7 +1884,7 @@ function renderGraph(data) {
         <div>Imports: ${d.out_degree || 0}</div>
         <div>Imported by: ${d.in_degree || 0}</div>
         <div class="tool-actions">
-          <button class="btn" style="width:auto" onclick="fillQueryAndSend(${JSON.stringify(`Explain the role of ${d.path} and what depends on it`)})">Ask About File</button>
+          <button class="btn" style="width:auto" onclick='setFileFocus(${JSON.stringify(d.path)})'>Ask About File</button>
         </div>
       `;
     })
@@ -1763,6 +1901,16 @@ function renderGraph(data) {
         d.fx = null; d.fy = null;
       }));
 
+  node.append('circle')
+    .attr('r', d => Math.max(4, Math.min(15, 4 + (d.degree || 0) * 0.8)))
+    .attr('fill', d => d.degree > 6 ? '#3fb950' : d.in_degree > d.out_degree ? '#d29922' : '#58a6ff')
+    .attr('stroke', '#c9d1d9')
+    .attr('stroke-width', 1)
+    .attr('pointer-events', 'all');
+
+  node.append('title')
+    .text(d => d.label);
+
   simulation.on('tick', () => {
     link
       .attr('x1', d => d.source.x)
@@ -1770,8 +1918,7 @@ function renderGraph(data) {
       .attr('x2', d => d.target.x)
       .attr('y2', d => d.target.y);
     node
-      .attr('cx', d => d.x)
-      .attr('cy', d => d.y);
+      .attr('transform', d => `translate(${d.x},${d.y})`);
     labels
       .attr('x', d => d.x + 10)
       .attr('y', d => d.y + 4);
@@ -1826,6 +1973,7 @@ function renderGraphFallback(nodes, links) {
     .map(node => `
       <g onclick='selectGraphNode(${JSON.stringify(encodeURIComponent(JSON.stringify(node)))})' style="cursor:pointer">
         <circle cx="${node.x}" cy="${node.y}" r="${Math.max(4, Math.min(12, 4 + (node.degree || 0)))}" fill="#58a6ff" stroke="#c9d1d9" stroke-width="1" />
+        <title>${escHtml(node.label)}</title>
       </g>
     `)
     .join('');
@@ -1847,7 +1995,7 @@ function selectGraphNode(serialized) {
     <div>Imports: ${d.out_degree || 0}</div>
     <div>Imported by: ${d.in_degree || 0}</div>
     <div class="tool-actions">
-      <button class="btn" style="width:auto" onclick="fillQueryAndSend(${JSON.stringify(`Explain the role of ${d.path} and what depends on it`)})">Ask About File</button>
+      <button class="btn" style="width:auto" onclick='setFileFocus(${JSON.stringify(d.path)})'>Ask About File</button>
     </div>
   `;
 }
@@ -1865,7 +2013,7 @@ async function runDiffAnalysis() {
     body: JSON.stringify({diff, query})
   });
   const data = await resp.json();
-  resultEl.innerHTML = marked.parse(data.text || 'No response.');
+  resultEl.innerHTML = `<div class="diff-report">${marked.parse(data.text || 'No response.')}</div>`;
 }
 
 function downloadPdf() {
@@ -1984,8 +2132,12 @@ function failIngestSteps(message='Failed') {
 function setStatus(type, text) {
   const dot = document.getElementById('statusDot');
   const label = document.getElementById('statusText');
-  dot.className = 'status-dot' + (type ? ' ' + type : '');
-  label.textContent = text;
+  if (dot) {
+    dot.className = 'status-dot' + (type ? ' ' + type : '');
+  }
+  if (label) {
+    label.textContent = text;
+  }
 }
 
 function setBusy(b) {
@@ -1994,7 +2146,7 @@ function setBusy(b) {
   const sb = document.getElementById('sendBtn');
   if (indexed) {
     qi.disabled = b;
-    sb.disabled = b;
+    if (sb) sb.disabled = false; // keep stop button clickable while running
   }
   if (b) setStatus('busy', 'Working…');
   else if (indexed) setStatus('ready', document.getElementById('repoName').textContent);
@@ -2003,6 +2155,20 @@ function setBusy(b) {
 function enableQuery(on) {
   document.getElementById('queryInput').disabled = !on;
   document.getElementById('sendBtn').disabled = !on;
+}
+
+function updateSendButton(isRunning) {
+  const btn = document.getElementById('sendBtn');
+  if (!btn) return;
+  if (isRunning) {
+    btn.classList.add('stop');
+    btn.setAttribute('title', 'Stop query');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="2" /></svg>`;
+  } else {
+    btn.classList.remove('stop');
+    btn.setAttribute('title', 'Send query');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+  }
 }
 
 // ── Repo info / files ────────────────────────────────────────────────
@@ -2020,9 +2186,12 @@ function renderFiles(files) {
   if (!files || !files.length) return;
   tree.innerHTML = files.map(f => {
     const ext = f.split('.').pop();
-    return `<div class="file-item" data-file="${escHtml(f)}" onclick="highlightSidebarFile('${f}'); fillQuery('Explain the file ${f}')">
+    const isFocused = activeFileFocus === f;
+    const focusedClass = isFocused ? ' focused' : '';
+    return `<div class="file-item${focusedClass}" data-file="${escHtml(f)}" onclick="highlightSidebarFile('${f}'); fillQuery('Explain the file ${f}')">
       <span class="file-ext ${ext}">.${ext}</span>
       <span style="overflow:hidden;text-overflow:ellipsis">${f}</span>
+      <button class="focus-btn" title="${isFocused ? 'Clear file focus' : 'Focus this file'}" onclick="event.stopPropagation(); ${isFocused ? 'clearFileFocus()' : `setFileFocus('${f}')`} ">${isFocused ? 'Unfocus' : 'Focus'}</button>
     </div>`;
   }).join('');
 }
@@ -2037,7 +2206,7 @@ async function loadHistory() {
       return;
     }
     list.innerHTML = data.map(e =>
-      `<div class="history-item" onclick="fillQueryAndSend(${JSON.stringify(e.query)})">${escHtml(e.query)}</div>`
+      `<div class="history-item" onclick='fillQueryAndSend(${JSON.stringify(e.query)})'>${escHtml(e.query)}</div>`
     ).join('');
   } catch {}
 }
@@ -2056,6 +2225,30 @@ function fillQuery(el) {
   qi.value = text;
   qi.focus();
   autoResize(qi);
+}
+
+function setFileFocus(file) {
+  activeFileFocus = file;
+  document.getElementById('focusFileName').textContent = file;
+  document.getElementById('focusBanner').style.display = 'flex';
+  document.querySelectorAll('.file-item').forEach((el) => {
+    el.classList.toggle('focused', el.dataset.file === file);
+    const btn = el.querySelector('.focus-btn');
+    if (btn) btn.textContent = el.dataset.file === file ? 'Focused' : 'Focus';
+  });
+  setView('query');
+  const qi = document.getElementById('queryInput');
+  qi.focus();
+  toast(`Set focus to ${file}`);
+}
+
+function clearFileFocus() {
+  activeFileFocus = null;
+  document.getElementById('focusBanner').style.display = 'none';
+  document.getElementById('focusFileName').textContent = '';
+  document.querySelectorAll('.file-item.focused').forEach(el => el.classList.remove('focused'));
+  document.querySelectorAll('.focus-btn').forEach(btn => btn.textContent = 'Focus');
+  toast('File focus cleared');
 }
 
 function fillQueryAndSend(text) {

@@ -67,6 +67,7 @@ class _AgentContext:
     past_context: str = ""
     retrieved_chunks: str = ""
     retrieved_files: list[str] = field(default_factory=list)
+    focus_file: str | None = None
     parser_context: str = ""
     graph_context: str = ""
     tool_context: str = ""
@@ -120,7 +121,7 @@ class Orchestrator:
         )
         return self.complete_query(prepared, reasoning_result.answer, reasoning_result.latency_ms)
 
-    def prepare_query(self, user_query: str) -> PreparedQuery:
+    def prepare_query(self, user_query: str, focus_file: str | None = None) -> PreparedQuery:
         t_start = time.perf_counter()
         logger.info("Processing query: %.120s", user_query)
 
@@ -128,14 +129,29 @@ class Orchestrator:
         past_context = self._memory.format_past_context(past_entries)
         history_summary = self._memory.recent_summary()
         plan: ExecutionPlan = self._planner.plan(user_query, history_summary)
-        context = _AgentContext(query=user_query, past_context=past_context)
+        context = _AgentContext(query=user_query, past_context=past_context, focus_file=focus_file)
 
         retrieval_ms = 0.0
+        focus_context = ""
+        focus_retrieved_files: list[str] = []
+        if focus_file:
+            focus_chunks = self._retriever._index.get_chunk_by_file(focus_file) if self._retriever._index else []
+            if focus_chunks:
+                focus_context = self._retriever.format_chunks(focus_chunks[:8], header=focus_file)
+                focus_retrieved_files = [focus_file]
+
         for agent_name in plan.agents:
             if agent_name == "retriever":
                 result = self._retriever.retrieve(user_query)
-                context.retrieved_chunks = result.formatted_context
-                context.retrieved_files = [r.chunk.file_path for r in result.search_results]
+                if focus_context:
+                    context.retrieved_chunks = (
+                        focus_context + "\n\n---\n\n" + result.formatted_context
+                        if result.formatted_context else focus_context
+                    )
+                    context.retrieved_files = list(dict.fromkeys(focus_retrieved_files + [r.chunk.file_path for r in result.search_results]))
+                else:
+                    context.retrieved_chunks = result.formatted_context
+                    context.retrieved_files = [r.chunk.file_path for r in result.search_results]
                 context.chunks_searched = result.num_chunks_searched
                 context.citations = result.citations
                 retrieval_ms = result.latency_ms
@@ -167,6 +183,7 @@ class Orchestrator:
             graph_context=prepared.context.graph_context,
             parser_context=prepared.context.parser_context,
             past_context=prepared.context.past_context,
+            focus_file=prepared.context.focus_file or "",
         )
 
     def complete_query(self, prepared: PreparedQuery, answer_text: str, reasoning_ms: float) -> QueryResponse:

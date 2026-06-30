@@ -35,7 +35,7 @@ EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 EMBEDDING_DIM: int = 1536  # dimensions for text-embedding-3-small
 
 # ─── Ingestion ────────────────────────────────────────────────────────────────
-SUPPORTED_EXTENSIONS: list[str] = [".py", ".js", ".ts", ".go", ".java", ".cpp", ".c", ".h", ".hpp", ".rs"]
+SUPPORTED_EXTENSIONS: list[str] = [".py", ".js", ".ts", ".go", ".java", ".cpp", ".c", ".h", ".hpp", ".rs", ".html"]
 MAX_FILE_SIZE_KB: int = 500  # skip files larger than this
 SUMMARIZER_MAX_CONCURRENCY: int = int(os.getenv("SUMMARIZER_MAX_CONCURRENCY", "8"))
 VECTOR_BATCH_SIZE: int = int(os.getenv("VECTOR_BATCH_SIZE", "64"))

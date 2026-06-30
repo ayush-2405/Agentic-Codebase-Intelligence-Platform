@@ -77,8 +77,14 @@ def reasoning_user(
     graph_context: str = "",
     parser_context: str = "",
     past_context: str = "",
+    focus_file: str = "",
 ) -> str:
     parts = [f"## User Query\n{query}", f"## Retrieved Code Chunks\n{retrieved_chunks}"]
+    if focus_file:
+        parts.append(
+            f"## Focus File\nUse {focus_file} as the primary file context for this answer. "
+            "Give it priority when resolving ambiguous references, but do not ignore the rest of the repo."
+        )
     if graph_context:
         parts.append(f"## Dependency Graph Insights\n{graph_context}")
     if parser_context:

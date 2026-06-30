@@ -70,6 +70,7 @@ class ReasoningAgent:
         graph_context: str = "",
         parser_context: str = "",
         past_context: str = "",
+        focus_file: str = "",
         citations: list[dict] | None = None,
     ) -> ReasoningResult:
         """
@@ -91,7 +92,12 @@ class ReasoningAgent:
             answer, latency = self._refactor_answer(query, retrieved_chunks, parser_context)
         else:
             answer, latency = self._standard_answer(
-                query, retrieved_chunks, graph_context, parser_context, past_context
+                query,
+                retrieved_chunks,
+                graph_context,
+                parser_context,
+                past_context,
+                focus_file,
             )
 
         return ReasoningResult(
@@ -109,6 +115,7 @@ class ReasoningAgent:
         graph_context: str = "",
         parser_context: str = "",
         past_context: str = "",
+        focus_file: str = "",
     ):
         is_refactor = self._is_refactor_query(query)
         if is_refactor:
@@ -130,6 +137,7 @@ class ReasoningAgent:
             graph_context=graph_context,
             parser_context=parser_context,
             past_context=past_context,
+            focus_file=focus_file,
         )
         yield from llm.stream_system_user(
             system=prompts.REASONING_SYSTEM,
@@ -146,6 +154,7 @@ class ReasoningAgent:
         graph_context: str,
         parser_context: str,
         past_context: str,
+        focus_file: str = "",
     ) -> tuple[str, float]:
         user_msg = prompts.reasoning_user(
             query=query,
@@ -153,6 +162,7 @@ class ReasoningAgent:
             graph_context=graph_context,
             parser_context=parser_context,
             past_context=past_context,
+            focus_file=focus_file,
         )
         t0 = time.perf_counter()
         answer = llm.system_user(

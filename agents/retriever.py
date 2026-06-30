@@ -106,6 +106,23 @@ class RetrieverAgent:
 
         return "\n\n---\n\n".join(parts)
 
+    @classmethod
+    def format_chunks(cls, chunks: list[Chunk], header: str | None = None) -> str:
+        if not chunks:
+            return "No relevant code chunks found for the focused file."
+
+        parts: list[str] = []
+        for i, chunk in enumerate(chunks, 1):
+            header_text = (
+                f"### [{i}] {chunk.file_path}"
+                + (f" — {chunk.symbol_name}" if chunk.symbol_name else "")
+            )
+            citation = cls._citation_label(chunk.file_path, chunk.start_line)
+            parts.append(f"{header_text}\nCitation: {citation}\n\n```\n{chunk.content}\n```")
+
+        content = "\n\n---\n\n".join(parts)
+        return f"## Primary File Context: {header}\n\n{content}" if header else content
+
     @staticmethod
     def _citation_label(file_path: str, start_line: int) -> str:
         line = start_line or 1

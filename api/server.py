@@ -82,6 +82,7 @@ class IngestRequest(BaseModel):
 
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=2)
+    focus_file: str | None = None
 
 
 def _registry_payload() -> dict:
@@ -393,11 +394,9 @@ async def query_stream(req: QueryRequest):
 
         try:
             loop = asyncio.get_running_loop()
-            prepared = await loop.run_in_executor(None, lambda: orch.prepare_query(req.query))
+            prepared = await loop.run_in_executor(None, lambda: orch.prepare_query(req.query, focus_file=req.focus_file))
 
             for agent in prepared.plan:
-                if agent in {"reasoning", "evaluator", "memory"}:
-                    continue
                 yield _emit("agent", {"agent": agent, "message": f"Ran {agent} agent"})
 
             if prepared.context.retrieved_files:
