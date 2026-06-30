@@ -395,6 +395,9 @@ async def query_stream(req: QueryRequest):
 
         try:
             loop = asyncio.get_running_loop()
+            if req.openai_api_key:
+                logger.info("Using user-supplied OpenAI API key for request")
+                config.OPENAI_API_KEY = req.openai_api_key
             prepared = await loop.run_in_executor(None, lambda: orch.prepare_query(req.query, focus_file=req.focus_file, api_key=req.openai_api_key))
 
             for agent in prepared.plan:
