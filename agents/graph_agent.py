@@ -157,12 +157,13 @@ class GraphAgent:
         ]
         return {"nodes": nodes, "links": links, "stats": self.summary_stats()}
 
-    def answer_query(self, query: str) -> str:
+    def answer_query(self, query: str, api_key: str | None = None) -> str:
         """
         Use the graph + LLM to answer a dependency-related question.
 
         Args:
             query: Natural language query about dependencies.
+            api_key: Optional OpenAI API key for this request.
 
         Returns:
             LLM-generated answer grounded in actual graph data.
@@ -174,6 +175,7 @@ class GraphAgent:
                 user=prompts.graph_agent_user(query, graph_data),
                 max_tokens=512,
                 temperature=0.1,
+                api_key=api_key,
             )
             return answer
         except Exception as exc:

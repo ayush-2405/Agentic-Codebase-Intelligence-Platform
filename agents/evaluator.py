@@ -56,13 +56,14 @@ class EvaluatorAgent:
     def __init__(self, threshold: float | None = None):
         self._threshold = threshold if threshold is not None else config.MIN_ACCEPTABLE_SCORE
 
-    def evaluate(self, query: str, answer: str) -> EvaluationResult:
+    def evaluate(self, query: str, answer: str, api_key: str | None = None) -> EvaluationResult:
         """
         Score *answer* against the original *query*.
 
         Args:
             query:  The original user question.
             answer: The generated answer to evaluate.
+            api_key: Optional OpenAI API key for this request.
 
         Returns:
             An EvaluationResult with scores and improvement suggestions.
@@ -78,6 +79,7 @@ class EvaluatorAgent:
                 max_tokens=512,
                 temperature=0.0,
                 response_format={"type": "json_object"},
+                api_key=api_key,
             )
             result = self._parse_result(raw)
             result.passed = result.overall_score >= self._threshold

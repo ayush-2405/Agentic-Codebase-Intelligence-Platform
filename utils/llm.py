@@ -24,8 +24,11 @@ logger = logging.getLogger(__name__)
 _client: openai.OpenAI | None = None
 
 
-def get_client() -> openai.OpenAI:
-    """Return (or lazily create) the shared OpenAI client."""
+def get_client(api_key: str | None = None) -> openai.OpenAI:
+    """Return an OpenAI client for the given API key."""
+    if api_key:
+        return openai.OpenAI(api_key=api_key)
+
     global _client
     if _client is None:
         if not config.OPENAI_API_KEY:
@@ -42,6 +45,7 @@ def chat_completion(
     temperature: float | None = None,
     max_tokens: int | None = None,
     response_format: dict | None = None,
+    api_key: str | None = None,
 ) -> str:
     """
     Send a chat completion request and return the assistant message text.
@@ -56,7 +60,7 @@ def chat_completion(
     Returns:
         The assistant's reply as a plain string.
     """
-    client = get_client()
+    client = get_client(api_key=api_key)
     kwargs: dict[str, Any] = {
         "model": model or config.LLM_MODEL,
         "messages": messages,
@@ -90,11 +94,12 @@ def chat_completion_stream(
     model: str | None = None,
     temperature: float | None = None,
     max_tokens: int | None = None,
+    api_key: str | None = None,
 ):
     """
     Stream a chat completion and yield content deltas as they arrive.
     """
-    client = get_client()
+    client = get_client(api_key=api_key)
     kwargs: dict[str, Any] = {
         "model": model or config.LLM_MODEL,
         "messages": messages,

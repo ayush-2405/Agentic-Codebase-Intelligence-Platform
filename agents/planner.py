@@ -48,13 +48,14 @@ class PlannerAgent:
     malformed JSON.
     """
 
-    def plan(self, query: str, history_summary: str = "") -> ExecutionPlan:
+    def plan(self, query: str, history_summary: str = "", api_key: str | None = None) -> ExecutionPlan:
         """
         Determine the agent execution plan for *query*.
 
         Args:
             query:           The user's raw question.
             history_summary: Brief summary of recent conversation (if any).
+            api_key:         Optional OpenAI API key for this request.
 
         Returns:
             An ExecutionPlan instance.
@@ -66,6 +67,7 @@ class PlannerAgent:
                 user=user_msg,
                 max_tokens=256,
                 temperature=0.0,
+                api_key=api_key,
             )
             plan_data = json.loads(self._extract_json(raw))
             agents = plan_data.get("plan", [])

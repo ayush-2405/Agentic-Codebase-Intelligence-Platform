@@ -83,6 +83,7 @@ class IngestRequest(BaseModel):
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=2)
     focus_file: str | None = None
+    openai_api_key: str | None = None
 
 
 def _registry_payload() -> dict:
@@ -218,7 +219,7 @@ async def _stream_reasoning_answer(orch: Orchestrator, prepared, delta_queue: as
 
     def _worker() -> None:
         try:
-            for delta in orch.stream_prepared_answer(prepared):
+            for delta in orch.stream_prepared_answer(prepared, api_key=prepared.api_key):
                 asyncio.run_coroutine_threadsafe(queue.put(("delta", delta)), loop)
         except Exception as exc:
             asyncio.run_coroutine_threadsafe(queue.put(("error", str(exc))), loop)
@@ -394,7 +395,7 @@ async def query_stream(req: QueryRequest):
 
         try:
             loop = asyncio.get_running_loop()
-            prepared = await loop.run_in_executor(None, lambda: orch.prepare_query(req.query, focus_file=req.focus_file))
+            prepared = await loop.run_in_executor(None, lambda: orch.prepare_query(req.query, focus_file=req.focus_file, api_key=req.openai_api_key))
 
             for agent in prepared.plan:
                 yield _emit("agent", {"agent": agent, "message": f"Ran {agent} agent"})

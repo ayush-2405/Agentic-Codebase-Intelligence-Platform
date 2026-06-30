@@ -1104,6 +1104,9 @@ header {
     <div class="sidebar-section">
       <div class="sidebar-label">Repository</div>
       <div class="repo-input-wrap">
+        <input id="openAiKeyInput" class="repo-input" type="password"
+          placeholder="OpenAI API key"
+          autocomplete="off" spellcheck="false" />
         <input id="repoUrl" class="repo-input" type="text"
           placeholder="https://github.com/user/repo"
           autocomplete="off" spellcheck="false" />
@@ -1416,10 +1419,11 @@ async function sendQuery() {
   currentQueryAbortController = new AbortController();
 
   try {
+    const apiKey = document.getElementById('openAiKeyInput').value.trim() || null;
     const resp = await fetch('/api/query', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({query: q, focus_file: activeFileFocus}),
+      body: JSON.stringify({query: q, focus_file: activeFileFocus, openai_api_key: apiKey}),
       signal: currentQueryAbortController.signal,
     });
 

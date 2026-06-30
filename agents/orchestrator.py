@@ -85,6 +85,7 @@ class PreparedQuery:
     started_at: float
     prep_ms: float
     retrieval_ms: float
+    api_key: str | None = None
 
 
 class Orchestrator:
@@ -109,8 +110,8 @@ class Orchestrator:
         self._memory = MemoryAgent(history_path=history_path)
         logger.info("Orchestrator initialised.")
 
-    def query(self, user_query: str) -> QueryResponse:
-        prepared = self.prepare_query(user_query)
+    def query(self, user_query: str, api_key: str | None = None) -> QueryResponse:
+        prepared = self.prepare_query(user_query, api_key=api_key)
         reasoning_result = self._reasoning_agent.reason(
             query=user_query,
             retrieved_chunks=prepared.context.retrieved_chunks or "No context retrieved.",
@@ -118,17 +119,18 @@ class Orchestrator:
             parser_context=prepared.context.parser_context,
             past_context=prepared.context.past_context,
             citations=prepared.context.citations,
+            api_key=prepared.api_key,
         )
         return self.complete_query(prepared, reasoning_result.answer, reasoning_result.latency_ms)
 
-    def prepare_query(self, user_query: str, focus_file: str | None = None) -> PreparedQuery:
+    def prepare_query(self, user_query: str, focus_file: str | None = None, api_key: str | None = None) -> PreparedQuery:
         t_start = time.perf_counter()
         logger.info("Processing query: %.120s", user_query)
 
         past_entries = self._memory.retrieve_similar(user_query)
         past_context = self._memory.format_past_context(past_entries)
         history_summary = self._memory.recent_summary()
-        plan: ExecutionPlan = self._planner.plan(user_query, history_summary)
+        plan: ExecutionPlan = self._planner.plan(user_query, history_summary, api_key=api_key)
         context = _AgentContext(query=user_query, past_context=past_context, focus_file=focus_file)
 
         retrieval_ms = 0.0
@@ -159,7 +161,7 @@ class Orchestrator:
                 files_to_parse = list(dict.fromkeys(context.retrieved_files))[:5]
                 context.parser_context = self._parser_agent.get_metadata(files_to_parse)
             elif agent_name == "graph":
-                context.graph_context = self._graph_agent.answer_query(user_query)
+                context.graph_context = self._graph_agent.answer_query(user_query, api_key=api_key)
             elif agent_name == "tool":
                 tool_results = self._tool_agent.search_repo(user_query[:50], max_results=10)
                 if tool_results:
@@ -174,9 +176,10 @@ class Orchestrator:
             started_at=t_start,
             prep_ms=(time.perf_counter() - t_start) * 1000,
             retrieval_ms=retrieval_ms,
+            api_key=api_key,
         )
 
-    def stream_prepared_answer(self, prepared: PreparedQuery):
+    def stream_prepared_answer(self, prepared: PreparedQuery, api_key: str | None = None):
         yield from self._reasoning_agent.stream_reason(
             query=prepared.query,
             retrieved_chunks=prepared.context.retrieved_chunks or "No context retrieved.",
@@ -184,12 +187,17 @@ class Orchestrator:
             parser_context=prepared.context.parser_context,
             past_context=prepared.context.past_context,
             focus_file=prepared.context.focus_file or "",
+            api_key=api_key,
         )
 
     def complete_query(self, prepared: PreparedQuery, answer_text: str, reasoning_ms: float) -> QueryResponse:
         prepared.context.answer = answer_text
         if "evaluator" in prepared.plan and prepared.context.answer:
-            prepared.context.evaluation = self._evaluator.evaluate(prepared.query, prepared.context.answer)
+            prepared.context.evaluation = self._evaluator.evaluate(
+                prepared.query,
+                prepared.context.answer,
+                api_key=prepared.api_key,
+            )
 
         total_ms = (time.perf_counter() - prepared.started_at) * 1000
         self._memory.store(

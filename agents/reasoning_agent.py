@@ -72,6 +72,7 @@ class ReasoningAgent:
         past_context: str = "",
         focus_file: str = "",
         citations: list[dict] | None = None,
+        api_key: str | None = None,
     ) -> ReasoningResult:
         """
         Generate the final answer by synthesising all context.
@@ -89,7 +90,7 @@ class ReasoningAgent:
         is_refactor = self._is_refactor_query(query)
 
         if is_refactor:
-            answer, latency = self._refactor_answer(query, retrieved_chunks, parser_context)
+            answer, latency = self._refactor_answer(query, retrieved_chunks, parser_context, api_key=api_key)
         else:
             answer, latency = self._standard_answer(
                 query,
@@ -98,6 +99,7 @@ class ReasoningAgent:
                 parser_context,
                 past_context,
                 focus_file,
+                api_key=api_key,
             )
 
         return ReasoningResult(
@@ -116,6 +118,7 @@ class ReasoningAgent:
         parser_context: str = "",
         past_context: str = "",
         focus_file: str = "",
+        api_key: str | None = None,
     ):
         is_refactor = self._is_refactor_query(query)
         if is_refactor:
@@ -128,6 +131,7 @@ class ReasoningAgent:
                 system=_REFACTOR_SYSTEM,
                 user=user_msg,
                 model=self._model,
+                api_key=api_key,
             )
             return
 
@@ -143,6 +147,7 @@ class ReasoningAgent:
             system=prompts.REASONING_SYSTEM,
             user=user_msg,
             model=self._model,
+            api_key=api_key,
         )
 
     # ── private ──────────────────────────────────────────────────────────────
@@ -155,6 +160,7 @@ class ReasoningAgent:
         parser_context: str,
         past_context: str,
         focus_file: str = "",
+        api_key: str | None = None,
     ) -> tuple[str, float]:
         user_msg = prompts.reasoning_user(
             query=query,
@@ -169,6 +175,7 @@ class ReasoningAgent:
             system=prompts.REASONING_SYSTEM,
             user=user_msg,
             model=self._model,
+            api_key=api_key,
         )
         latency = (time.perf_counter() - t0) * 1000
         logger.info("Reasoning completed in %.1fms", latency)
@@ -179,6 +186,7 @@ class ReasoningAgent:
         query: str,
         retrieved_chunks: str,
         parser_context: str,
+        api_key: str | None = None,
     ) -> tuple[str, float]:
         user_msg = _REFACTOR_USER_TEMPLATE.format(
             query=query,
@@ -190,6 +198,7 @@ class ReasoningAgent:
             system=_REFACTOR_SYSTEM,
             user=user_msg,
             model=self._model,
+            api_key=api_key,
         )
         latency = (time.perf_counter() - t0) * 1000
         logger.info("Refactor reasoning completed in %.1fms", latency)
