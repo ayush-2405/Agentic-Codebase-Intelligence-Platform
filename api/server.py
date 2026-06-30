@@ -283,9 +283,9 @@ async def ingest_stream(req: IngestRequest):
             paths["base"].mkdir(parents=True, exist_ok=True)
 
             if req.openai_api_key:
-            logger.info("Using user-supplied OpenAI API key for ingest")
-            config.OPENAI_API_KEY = req.openai_api_key
-        config.DATA_DIR = clone_dir
+                logger.info("Using user-supplied OpenAI API key for ingest")
+                config.OPENAI_API_KEY = req.openai_api_key
+            config.DATA_DIR = clone_dir
             _state.update(
                 {
                     "repo_id": repo_id,
