@@ -78,6 +78,7 @@ class SearchRequest(BaseModel):
 class IngestRequest(BaseModel):
     github_url: str = Field(..., description="GitHub repo URL, e.g. https://github.com/user/repo")
     branch: str = Field(default="", description="Branch name (leave blank for default)")
+    openai_api_key: str | None = None
 
 
 class QueryRequest(BaseModel):
@@ -281,7 +282,10 @@ async def ingest_stream(req: IngestRequest):
             paths = repo_record_paths(repo_id)
             paths["base"].mkdir(parents=True, exist_ok=True)
 
-            config.DATA_DIR = clone_dir
+            if req.openai_api_key:
+            logger.info("Using user-supplied OpenAI API key for ingest")
+            config.OPENAI_API_KEY = req.openai_api_key
+        config.DATA_DIR = clone_dir
             _state.update(
                 {
                     "repo_id": repo_id,

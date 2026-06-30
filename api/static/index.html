@@ -1348,10 +1348,11 @@ async function startIngest() {
   document.getElementById('ingestBtn').textContent = '⬡ Working…';
 
   try {
+    const apiKey = document.getElementById('openAiKeyInput').value.trim() || null;
     const resp = await fetch('/api/ingest', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({github_url: url, branch})
+      body: JSON.stringify({github_url: url, branch, openai_api_key: apiKey})
     });
 
     if (!resp.ok) {
