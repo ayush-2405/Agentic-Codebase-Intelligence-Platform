@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+.venv-1/
+venv/
+env/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Runtime/generated artifacts
+memory/
+graph/
+*.pkl
+*.index
+*.npy
+*.db
+
+# Test temp directories
+tests/_tmp_*/

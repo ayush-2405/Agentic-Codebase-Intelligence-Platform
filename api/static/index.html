@@ -1,0 +1,2124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ACIP — Agentic Codebase Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+:root {
+  --bg:       #090b10;
+  --surface:  #0e1117;
+  --border:   #1e2530;
+  --border2:  #2a3445;
+  --text:     #c9d1d9;
+  --dim:      #6e7b8e;
+  --accent:   #58a6ff;
+  --accent2:  #3fb950;
+  --warn:     #d29922;
+  --err:      #f85149;
+  --purple:   #bc8cff;
+  --mono:     'JetBrains Mono', monospace;
+  --sans:     'Syne', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(88,166,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(88,166,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(9,11,16,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.5px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+
+.header-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--border2);
+  transition: background 0.3s;
+}
+.status-dot.ready { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+.status-dot.busy  { background: var(--warn); animation: pulse 1s infinite; }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── Layout ──────────────────────────────────────────────────────── */
+.app {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: 1fr;
+  height: calc(100vh - 56px);
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* Repo input area */
+.repo-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.repo-input {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  width: 100%;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.repo-input::placeholder { color: var(--dim); }
+.repo-input:focus { border-color: var(--accent); }
+
+.btn {
+  background: var(--accent);
+  color: #0d1117;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s;
+  letter-spacing: 0.3px;
+}
+.btn:hover { background: #79c0ff; transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { background: var(--border2); color: var(--dim); cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover { background: rgba(88,166,255,0.08); border-color: var(--accent); }
+
+/* Progress */
+.progress-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+.progress-wrap.visible { display: flex; }
+
+.progress-bar-bg {
+  height: 3px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--purple));
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.progress-msg {
+  font-size: 11px;
+  color: var(--dim);
+  min-height: 16px;
+}
+
+.ingest-steps {
+  display: none;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(88,166,255,0.06), rgba(88,166,255,0.015)),
+    var(--surface);
+  gap: 8px;
+}
+.ingest-steps.visible { display: grid; }
+
+.ingest-steps-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ingest-steps-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+.ingest-steps-phase {
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+}
+
+.ingest-step-list {
+  display: grid;
+  gap: 6px;
+}
+
+.ingest-step {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.ingest-step:last-child { border-bottom: none; }
+
+.ingest-step-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: rgba(255,255,255,0.02);
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+  margin-top: 1px;
+  transition: all 0.2s ease;
+}
+
+.ingest-step-text {
+  min-width: 0;
+}
+
+.ingest-step-name {
+  font-size: 11px;
+  color: var(--text);
+}
+
+.ingest-step-note {
+  font-size: 10px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.ingest-step.pending .ingest-step-name { color: var(--dim); }
+.ingest-step.active .ingest-step-dot {
+  border-color: rgba(88,166,255,0.7);
+  background: rgba(88,166,255,0.12);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(88,166,255,0.08);
+}
+.ingest-step.active .ingest-step-name { color: #fff; }
+.ingest-step.active .ingest-step-note { color: #9fb3c8; }
+
+.ingest-step.done .ingest-step-dot {
+  border-color: rgba(63,185,80,0.45);
+  background: rgba(63,185,80,0.14);
+  color: var(--accent2);
+}
+.ingest-step.done .ingest-step-name { color: #d7f7dd; }
+
+.ingest-step.error .ingest-step-dot {
+  border-color: rgba(248,81,73,0.45);
+  background: rgba(248,81,73,0.14);
+  color: var(--err);
+}
+.ingest-step.error .ingest-step-name,
+.ingest-step.error .ingest-step-note { color: #ffb3ad; }
+
+/* Repo info */
+.repo-info {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+}
+.repo-info.visible { display: flex; }
+
+.repo-name {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.repo-meta {
+  display: flex;
+  gap: 12px;
+}
+.meta-pill {
+  font-size: 10px;
+  color: var(--dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+.meta-pill span { color: var(--text); font-weight: 500; }
+
+/* File tree */
+.file-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.file-tree::-webkit-scrollbar { width: 4px; }
+.file-tree::-webkit-scrollbar-track { background: transparent; }
+.file-tree::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 16px;
+  font-size: 11px;
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.1s;
+  border-left: 2px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-item:hover { color: var(--text); background: rgba(88,166,255,0.05); border-left-color: var(--accent); }
+.file-item.active { color: #fff; background: rgba(88,166,255,0.12); border-left-color: var(--accent2); }
+.file-ext { font-size: 9px; background: var(--border); padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
+.file-ext.py  { color: #4ec9b0; }
+.file-ext.js  { color: #d7ba7d; }
+.file-ext.ts  { color: var(--accent); }
+.file-ext.go  { color: #9cdcfe; }
+.file-ext.rs  { color: #ce9178; }
+
+/* History */
+.history-list {
+  overflow-y: auto;
+  max-height: 200px;
+  padding: 4px 0;
+}
+.history-list::-webkit-scrollbar { width: 4px; }
+.history-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.history-item {
+  padding: 7px 16px;
+  font-size: 11px;
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.1s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-item:hover { color: var(--text); background: rgba(88,166,255,0.05); }
+
+/* ── Main ────────────────────────────────────────────────────────── */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Chat area ───────────────────────────────────────────────────── */
+.chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.chat::-webkit-scrollbar { width: 6px; }
+.chat::-webkit-scrollbar-track { background: transparent; }
+.chat::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* Welcome state */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 16px;
+  color: var(--dim);
+  text-align: center;
+  padding: 40px;
+  animation: fadein 0.6s ease;
+}
+
+.welcome-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.welcome h2 {
+  font-family: var(--sans);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.welcome p { font-size: 13px; max-width: 400px; }
+
+.example-queries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.example-q {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.example-q:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(88,166,255,0.06);
+}
+
+/* Message bubbles */
+.msg {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: fadein 0.3s ease;
+  max-width: 900px;
+}
+
+@keyframes fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.msg-user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.msg-user .bubble {
+  background: rgba(88,166,255,0.12);
+  border: 1px solid rgba(88,166,255,0.25);
+  border-radius: 12px 12px 2px 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text);
+  max-width: 600px;
+}
+
+.msg-ai { align-self: flex-start; width: 100%; }
+
+.agent-trail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.agent-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1px solid;
+  animation: fadein 0.2s ease;
+  text-transform: uppercase;
+}
+
+.badge-planner   { color: #bc8cff; border-color: rgba(188,140,255,0.3); background: rgba(188,140,255,0.08); }
+.badge-retriever { color: var(--accent); border-color: rgba(88,166,255,0.3); background: rgba(88,166,255,0.08); }
+.badge-parser    { color: #4ec9b0; border-color: rgba(78,201,176,0.3); background: rgba(78,201,176,0.08); }
+.badge-graph     { color: #d7ba7d; border-color: rgba(215,186,125,0.3); background: rgba(215,186,125,0.08); }
+.badge-tool      { color: #9cdcfe; border-color: rgba(156,220,254,0.3); background: rgba(156,220,254,0.08); }
+.badge-reasoning { color: var(--accent2); border-color: rgba(63,185,80,0.3); background: rgba(63,185,80,0.08); }
+.badge-evaluator { color: #ce9178; border-color: rgba(206,145,120,0.3); background: rgba(206,145,120,0.08); }
+.badge-memory    { color: #f97583; border-color: rgba(249,117,131,0.3); background: rgba(249,117,131,0.08); }
+
+.context-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.context-file {
+  font-size: 10px;
+  color: var(--dim);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.answer-bubble {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px 12px 12px 12px;
+  padding: 20px 24px;
+  line-height: 1.7;
+}
+
+/* Markdown rendering */
+.answer-bubble h1, .answer-bubble h2, .answer-bubble h3 {
+  font-family: var(--sans);
+  font-weight: 700;
+  margin: 1.2em 0 0.4em;
+  color: #fff;
+}
+.answer-bubble h1 { font-size: 18px; }
+.answer-bubble h2 { font-size: 16px; }
+.answer-bubble h3 { font-size: 14px; }
+.answer-bubble p  { margin-bottom: 0.8em; }
+.answer-bubble ul, .answer-bubble ol { padding-left: 20px; margin-bottom: 0.8em; }
+.answer-bubble li { margin-bottom: 4px; }
+.answer-bubble a  { color: var(--accent); text-decoration: none; }
+.answer-bubble a:hover { text-decoration: underline; }
+.answer-bubble .citation-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(88,166,255,0.12);
+  border: 1px solid rgba(88,166,255,0.22);
+}
+.answer-bubble strong { color: #fff; font-weight: 600; }
+.answer-bubble em { color: var(--accent); font-style: italic; }
+.answer-bubble code {
+  background: rgba(88,166,255,0.1);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #e3b341;
+}
+.answer-bubble pre {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.answer-bubble pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+  font-size: 12px;
+}
+.answer-bubble blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+  color: var(--dim);
+  margin: 8px 0;
+}
+.answer-bubble table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
+.answer-bubble th { background: var(--bg); color: var(--dim); font-weight: 500; padding: 7px 12px; border: 1px solid var(--border); text-align: left; }
+.answer-bubble td { padding: 7px 12px; border: 1px solid var(--border); }
+.answer-bubble tr:hover td { background: rgba(88,166,255,0.04); }
+
+.eval-bar {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.eval-score {
+  font-size: 11px;
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.score-pip {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+.metrics-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.metric { font-size: 11px; color: var(--dim); }
+.metric span { color: var(--text); }
+
+/* Thinking indicator */
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--dim);
+  width: fit-content;
+  animation: fadein 0.2s ease;
+}
+
+.thinking-dots span {
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin: 0 2px;
+  animation: bounce 1.2s infinite;
+}
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+/* ── Input area ──────────────────────────────────────────────────── */
+.input-area {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 16px 32px;
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.query-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  resize: none;
+  outline: none;
+  min-height: 48px;
+  max-height: 200px;
+  transition: border-color 0.2s;
+  line-height: 1.5;
+}
+.query-input::placeholder { color: var(--dim); }
+.query-input:focus { border-color: var(--accent); }
+.query-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.send-btn {
+  width: 48px; height: 48px;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  color: #0d1117;
+}
+.send-btn:hover { background: #79c0ff; transform: translateY(-1px); }
+.send-btn:disabled { background: var(--border2); cursor: not-allowed; transform: none; }
+.send-btn svg { width: 18px; height: 18px; }
+
+.input-hint {
+  font-size: 10px;
+  color: var(--dim);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.repo-select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-top: 10px;
+}
+
+.repo-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(14,17,23,0.75);
+  backdrop-filter: blur(10px);
+}
+
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.view-tab {
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--dim);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.view-tab.active {
+  color: #fff;
+  border-color: rgba(88,166,255,0.45);
+  background: rgba(88,166,255,0.12);
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mini-btn {
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.panel {
+  display: none;
+  flex: 1;
+  min-height: 0;
+}
+
+.panel.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-panel {
+  padding: 20px 24px;
+  gap: 14px;
+  overflow: auto;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.tool-title {
+  font-family: var(--sans);
+  color: #fff;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.tool-subtitle {
+  color: var(--dim);
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+
+.tool-input, .tool-textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+}
+
+.tool-textarea {
+  min-height: 180px;
+  resize: vertical;
+}
+
+.tool-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.tool-result {
+  margin-top: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  min-height: 80px;
+}
+
+.search-results {
+  display: grid;
+  gap: 8px;
+}
+
+.search-hit {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.02);
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.search-hit:hover { border-color: rgba(88,166,255,0.35); }
+
+.search-hit-file {
+  color: #fff;
+  font-size: 12px;
+}
+
+.search-hit-line {
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.search-hit-text {
+  color: var(--dim);
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+.graph-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  min-height: 0;
+  flex: 1;
+}
+
+.graph-legend, .graph-canvas {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.graph-canvas {
+  min-height: 520px;
+  position: relative;
+  overflow: hidden;
+}
+
+.graph-svg {
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+}
+
+.graph-node-meta {
+  font-size: 11px;
+  color: var(--dim);
+  display: grid;
+  gap: 8px;
+}
+
+.graph-file {
+  color: #fff;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.graph-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.graph-note {
+  color: var(--dim);
+  font-size: 11px;
+}
+
+/* ── Toast ───────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 12px;
+  color: var(--text);
+  z-index: 999;
+  animation: slidein 0.3s ease;
+  max-width: 320px;
+}
+.toast.err { border-color: var(--err); color: var(--err); }
+.toast.ok  { border-color: var(--accent2); }
+
+@keyframes slidein { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+
+/* Scrollbar global */
+* { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .sidebar { max-height: 280px; overflow-y: auto; }
+  .chat { padding: 16px; }
+  .input-area { padding: 12px 16px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⬡</div>
+    ACIP
+  </div>
+  <span style="color:var(--dim);font-size:11px;letter-spacing:0.5px">Agentic Codebase Intelligence Platform</span>
+  <div class="header-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">No repo loaded</span>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Repo input -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Repository</div>
+      <div class="repo-input-wrap">
+        <input id="repoUrl" class="repo-input" type="text"
+          placeholder="https://github.com/user/repo"
+          autocomplete="off" spellcheck="false" />
+        <input id="branchInput" class="repo-input" type="text"
+          placeholder="Branch (optional, default: main)" autocomplete="off" />
+        <button class="btn" id="ingestBtn" onclick="startIngest()">
+          ⬡ Analyse Repository
+        </button>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-msg" id="progressMsg">Starting…</div>
+      </div>
+      <div class="ingest-steps" id="ingestSteps">
+        <div class="ingest-steps-head">
+          <div class="ingest-steps-title">Pipeline</div>
+          <div class="ingest-steps-phase" id="ingestPhaseLabel">Waiting</div>
+        </div>
+        <div class="ingest-step-list" id="ingestStepList"></div>
+      </div>
+    </div>
+
+    <!-- Repo info -->
+    <div class="sidebar-section">
+      <div class="repo-info" id="repoInfo">
+        <div class="repo-name" id="repoName">—</div>
+        <div class="repo-meta">
+          <div class="meta-pill">Files: <span id="fileCount">0</span></div>
+          <div class="meta-pill">Chunks: <span id="chunkCount">0</span></div>
+        </div>
+        <div class="repo-meta">
+          <div class="meta-pill">Nodes: <span id="graphNodes">0</span></div>
+          <div class="meta-pill">Edges: <span id="graphEdges">0</span></div>
+        </div>
+        <select id="repoSwitcher" class="repo-select" onchange="activateRepo(this.value)">
+          <option value="">No saved repos</option>
+        </select>
+        <div class="repo-actions">
+          <button class="btn btn-ghost" style="width:auto;padding:6px 10px;font-size:10px" onclick="setView('graph')">Open Graph</button>
+          <button class="btn btn-ghost" style="width:auto;padding:6px 10px;font-size:10px" onclick="downloadPdf()">Export PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Files -->
+    <div class="sidebar-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;border-bottom:none">
+      <div class="sidebar-label">Indexed Files</div>
+      <div class="file-tree" id="fileTree">
+        <div style="color:var(--dim);font-size:11px;padding:8px 16px">No files indexed yet</div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="sidebar-section" style="border-top:1px solid var(--border);border-bottom:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="sidebar-label" style="margin:0">History</div>
+        <button class="btn btn-ghost" style="width:auto;padding:3px 10px;font-size:10px" onclick="clearHistory()">Clear</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <div style="color:var(--dim);font-size:11px;padding:4px 0">No history yet</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── Main ─────────────────────────────────────────────────────── -->
+  <main class="main">
+    <div class="topbar">
+      <div class="view-tabs">
+        <button class="view-tab active" data-view="query" onclick="setView('query')">Query</button>
+        <button class="view-tab" data-view="search" onclick="setView('search')">Search</button>
+        <button class="view-tab" data-view="graph" onclick="setView('graph')">Graph</button>
+        <button class="view-tab" data-view="diff" onclick="setView('diff')">Diff</button>
+      </div>
+      <div class="topbar-actions">
+        <button class="mini-btn" onclick="loadGraph()">Refresh Graph</button>
+        <button class="mini-btn" onclick="downloadPdf()">Session PDF</button>
+      </div>
+    </div>
+
+    <div class="panel active" id="panel_query">
+    <div class="chat" id="chat">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">⬡</div>
+        <h2>Codebase Intelligence</h2>
+        <p>Paste a GitHub URL on the left to clone and index a repository, then ask anything about the code.</p>
+        <div class="example-queries" id="exampleQueries">
+          <div class="example-q" onclick="fillQuery(this)">Explain the overall architecture</div>
+          <div class="example-q" onclick="fillQuery(this)">Where is authentication implemented?</div>
+          <div class="example-q" onclick="fillQuery(this)">What are the main data models?</div>
+          <div class="example-q" onclick="fillQuery(this)">Which files have the most dependencies?</div>
+          <div class="example-q" onclick="fillQuery(this)">Suggest refactoring improvements</div>
+          <div class="example-q" onclick="fillQuery(this)">What does the main entry point do?</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <textarea
+          id="queryInput"
+          class="query-input"
+          placeholder="Ask anything about the codebase…"
+          rows="1"
+          disabled
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendQuery()" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Enter to send · Shift+Enter for newline</div>
+    </div>
+    </div>
+
+    <div class="panel tool-panel" id="panel_search">
+      <div class="tool-grid">
+        <div class="tool-card">
+          <div class="tool-title">Regex / Keyword Search</div>
+          <div class="tool-subtitle">Search indexed files with line-level matches.</div>
+          <input id="searchInput" class="tool-input" placeholder="auth middleware|AuthService|TODO" />
+          <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:11px;color:var(--dim)">
+            <input type="checkbox" id="searchRegex" /> Treat query as regex
+          </label>
+          <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:11px;color:var(--dim)">
+            <input type="checkbox" id="searchCase" /> Case sensitive
+          </label>
+          <div class="tool-actions">
+            <button class="btn" style="width:auto" onclick="runSearch()">Run Search</button>
+          </div>
+          <div class="tool-result">
+            <div class="search-results" id="searchResults">
+              <div style="color:var(--dim)">Search results will appear here.</div>
+            </div>
+          </div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-title">Search Shortcuts</div>
+          <div class="tool-subtitle">Click a result to turn it into a file-specific question.</div>
+          <div class="example-queries" style="justify-content:flex-start">
+            <div class="example-q" onclick="document.getElementById('searchInput').value='class '">Find classes</div>
+            <div class="example-q" onclick="document.getElementById('searchInput').value='TODO|FIXME'">TODO / FIXME</div>
+            <div class="example-q" onclick="document.getElementById('searchInput').value='auth|login|token'">Auth flow</div>
+            <div class="example-q" onclick="document.getElementById('searchInput').value='fetch|axios|request'">HTTP clients</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel tool-panel" id="panel_graph">
+      <div class="graph-shell">
+        <div class="graph-legend">
+          <div class="tool-title">Dependency Graph</div>
+          <div class="tool-subtitle">Interactive force layout. Click a node to ask about that file.</div>
+          <div class="graph-toolbar">
+            <button class="mini-btn" onclick="setGraphMode('connected')">Connected Only</button>
+            <button class="mini-btn" onclick="setGraphMode('all')">All Files</button>
+          </div>
+          <div class="graph-note" id="graphModeNote">Showing connected files first for readability.</div>
+          <div class="graph-node-meta" id="graphMeta">
+            <div>Select a node to inspect it.</div>
+          </div>
+        </div>
+        <div class="graph-canvas">
+          <svg id="graphSvg" class="graph-svg"></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel tool-panel" id="panel_diff">
+      <div class="tool-grid">
+        <div class="tool-card">
+          <div class="tool-title">Diff-Aware Analysis</div>
+          <div class="tool-subtitle">Paste a git diff and ask what may break before applying it.</div>
+          <textarea id="diffInput" class="tool-textarea" placeholder="Paste a unified diff here…"></textarea>
+          <input id="diffQuestion" class="tool-input" style="margin-top:12px" value="What breaks if I apply this diff?" />
+          <div class="tool-actions">
+            <button class="btn" style="width:auto" onclick="runDiffAnalysis()">Analyze Diff</button>
+          </div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-title">Impact Report</div>
+          <div class="tool-subtitle">Combines retrieved code context with dependency graph impact.</div>
+          <div class="tool-result" id="diffResult">
+            <div style="color:var(--dim)">Diff analysis results will appear here.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+let indexed = false;
+let busy    = false;
+let currentView = 'query';
+let graphCache = null;
+let graphMode = 'connected';
+const INGEST_PHASES = [
+  { id: 'clone', label: 'Clone repository', icon: '1' },
+  { id: 'load', label: 'Scan source files', icon: '2' },
+  { id: 'parse', label: 'Parse structure', icon: '3' },
+  { id: 'summarize', label: 'Summarize files', icon: '4' },
+  { id: 'chunk', label: 'Create chunks', icon: '5' },
+  { id: 'index', label: 'Build vector index', icon: '6' },
+  { id: 'graph', label: 'Map dependencies', icon: '7' },
+];
+
+// ── Ingest ─────────────────────────────────────────────────────────
+async function startIngest() {
+  const url = document.getElementById('repoUrl').value.trim();
+  const branch = document.getElementById('branchInput').value.trim();
+  if (!url) { toast('Paste a GitHub URL first', 'err'); return; }
+
+  setStatus('busy', 'Cloning…');
+  setBusy(true);
+  indexed = false;
+
+  showProgress(true);
+  resetIngestSteps();
+  document.getElementById('repoInfo').classList.remove('visible');
+  document.getElementById('ingestBtn').disabled = true;
+  document.getElementById('ingestBtn').textContent = '⬡ Working…';
+
+  try {
+    const resp = await fetch('/api/ingest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({github_url: url, branch})
+    });
+
+    if (!resp.ok) {
+      throw new Error(`Ingest request failed (${resp.status})`);
+    }
+    if (!resp.body) {
+      throw new Error('Streaming response not available in this browser');
+    }
+
+    await readSseStream(resp.body, handleIngestEvent);
+  } catch (err) {
+    const message = err && err.message ? err.message : 'Ingest stream failed';
+    handleIngestEvent('error', {message});
+  }
+}
+
+function handleIngestEvent(event, data) {
+  if (event === 'step') {
+    updateProgress(data.progress, data.message);
+    updateIngestSteps(data.phase, data.message);
+    if (data.detail) renderFiles(data.detail);
+  } else if (event === 'done') {
+    updateProgress(100, data.message);
+    finishIngestSteps(data.message);
+    setTimeout(() => {
+      showProgress(false);
+      showRepoInfo(data);
+      renderRepoSwitcher(data.repos || []);
+      setStatus('ready', data.repo_name);
+      indexed = true;
+      setBusy(false);
+      enableQuery(true);
+      renderFiles(data.files || []);
+      loadHistory();
+      loadGraph();
+      document.getElementById('ingestBtn').disabled = false;
+      document.getElementById('ingestBtn').textContent = '⬡ Re-analyse';
+      toast('Repository indexed successfully', 'ok');
+    }, 600);
+  } else if (event === 'error') {
+    showProgress(false);
+    failIngestSteps(data.message);
+    setStatus('', 'Error');
+    setBusy(false);
+    document.getElementById('ingestBtn').disabled = false;
+    document.getElementById('ingestBtn').textContent = '⬡ Analyse Repository';
+    toast('Error: ' + data.message, 'err');
+  }
+}
+
+// ── Query ──────────────────────────────────────────────────────────
+async function sendQuery() {
+  const q = document.getElementById('queryInput').value.trim();
+  if (!q || busy) return;
+  if (!indexed) { toast('Index a repo first', 'err'); return; }
+
+  appendUserMsg(q);
+  document.getElementById('queryInput').value = '';
+  autoResize(document.getElementById('queryInput'));
+  hideWelcome();
+
+  setBusy(true);
+  const thinkEl = appendThinking();
+
+  try {
+    const resp = await fetch('/api/query', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({query: q})
+    });
+
+    if (!resp.ok) {
+      throw new Error(`Query request failed (${resp.status})`);
+    }
+    if (!resp.body) {
+      throw new Error('Streaming response not available in this browser');
+    }
+
+    let aiMsg = null;
+    let streamState = null;
+    await readSseStream(resp.body, (event, data) => {
+      if (event === 'thinking') {
+        updateThinking(thinkEl, data.message);
+      } else if (event === 'agent') {
+        if (!aiMsg) { thinkEl.remove(); aiMsg = createAiMsg(); }
+        addAgentBadge(aiMsg, data.agent);
+      } else if (event === 'context') {
+        if (!aiMsg) { thinkEl.remove(); aiMsg = createAiMsg(); }
+        addContextFiles(aiMsg, data.files);
+      } else if (event === 'answer_start') {
+        if (!aiMsg) { thinkEl.remove(); aiMsg = createAiMsg(); }
+        streamState = startStreamingAnswer(aiMsg, data);
+      } else if (event === 'answer_delta') {
+        if (!aiMsg) { thinkEl.remove(); aiMsg = createAiMsg(); }
+        if (!streamState) streamState = startStreamingAnswer(aiMsg, {});
+        appendAnswerDelta(streamState, data.delta || '');
+      } else if (event === 'answer') {
+        if (!aiMsg) { thinkEl.remove(); aiMsg = createAiMsg(); }
+        finaliseAnswer(aiMsg, data, streamState);
+        setBusy(false);
+        loadHistory();
+      } else if (event === 'error') {
+        thinkEl.remove();
+        appendErrorMsg(data.message);
+        setBusy(false);
+      }
+    });
+  } catch (err) {
+    thinkEl.remove();
+    appendErrorMsg(err && err.message ? err.message : 'Query stream failed');
+    setBusy(false);
+  }
+}
+
+// ── DOM helpers ────────────────────────────────────────────────────
+function appendUserMsg(text) {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg msg-user';
+  div.innerHTML = `<div class="bubble">${escHtml(text)}</div>`;
+  chat.appendChild(div);
+  scrollChat();
+}
+
+function appendThinking() {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'thinking';
+  div.innerHTML = `
+    <div class="thinking-dots"><span></span><span></span><span></span></div>
+    <span id="thinkMsg">Planning…</span>`;
+  chat.appendChild(div);
+  scrollChat();
+  return div;
+}
+
+function updateThinking(el, msg) {
+  const span = el.querySelector('#thinkMsg');
+  if (span) span.textContent = msg;
+}
+
+function createAiMsg() {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai';
+  div.innerHTML = `
+    <div class="agent-trail" id="agentTrail_${Date.now()}"></div>
+    <div class="context-files" id="ctxFiles_${Date.now()}"></div>
+    <div class="answer-bubble" id="answerBubble_${Date.now()}">
+      <div class="thinking-dots"><span></span><span></span><span></span></div>
+    </div>`;
+  chat.appendChild(div);
+  scrollChat();
+  return div;
+}
+
+function startStreamingAnswer(msgEl, data={}) {
+  const bubble = msgEl.querySelector('[id^="answerBubble_"]');
+  const state = {
+    bubble,
+    text: '',
+    citations: data.citations || [],
+  };
+  if (bubble) {
+    bubble.innerHTML = '<div style="color:var(--dim)">Streaming answer...</div>';
+  }
+  return state;
+}
+
+function addAgentBadge(msgEl, agent) {
+  const trail = msgEl.querySelector('[id^="agentTrail_"]');
+  if (!trail) return;
+  const badge = document.createElement('span');
+  badge.className = `agent-badge badge-${agent}`;
+  badge.textContent = agent;
+  trail.appendChild(badge);
+  scrollChat();
+}
+
+function addContextFiles(msgEl, files) {
+  const ctx = msgEl.querySelector('[id^="ctxFiles_"]');
+  if (!ctx) return;
+  files.forEach(f => {
+    const span = document.createElement('span');
+    span.className = 'context-file';
+    span.textContent = f;
+    ctx.appendChild(span);
+  });
+}
+
+function appendAnswerDelta(state, delta) {
+  if (!state || !state.bubble || !delta) return;
+  state.text += delta;
+  state.bubble.innerHTML = renderAnswerMarkdown(state.text);
+  bindCitationLinks(state.bubble);
+  scrollChat();
+}
+
+function finaliseAnswer(msgEl, data, state=null) {
+  const bubble = msgEl.querySelector('[id^="answerBubble_"]');
+  if (!bubble) return;
+
+  const answerText = data.text || (state ? state.text : '');
+  const md = renderAnswerMarkdown(answerText);
+  let evalHtml = '';
+  if (data.evaluation) {
+    const score = data.evaluation.overall;
+    const color = score >= 0.7 ? 'var(--accent2)' : score >= 0.5 ? 'var(--warn)' : 'var(--err)';
+    evalHtml = `
+      <div class="eval-bar">
+        <div class="eval-score">
+          <span class="score-pip" style="background:${color}"></span>
+          Quality score: <strong style="color:${color}">${(score*100).toFixed(0)}%</strong>
+        </div>
+        ${data.metrics ? `
+        <div class="metrics-bar">
+          <span class="metric">⏱ <span>${(data.metrics.total_ms||0).toFixed(0)}ms</span></span>
+          <span class="metric">🔍 <span>${data.metrics.chunks_searched||0} chunks</span></span>
+        </div>` : ''}
+      </div>`;
+  }
+
+  bubble.innerHTML = md + evalHtml;
+  bindCitationLinks(bubble, data.citations || (state ? state.citations : []));
+  hljs.highlightAll();
+  scrollChat();
+}
+
+function appendErrorMsg(msg) {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai';
+  div.innerHTML = `<div class="answer-bubble" style="border-color:var(--err);color:var(--err)">⚠ ${escHtml(msg)}</div>`;
+  chat.appendChild(div);
+  scrollChat();
+}
+
+function hideWelcome() {
+  const w = document.getElementById('welcome');
+  if (w) w.style.display = 'none';
+}
+
+function scrollChat() {
+  const chat = document.getElementById('chat');
+  requestAnimationFrame(() => chat.scrollTop = chat.scrollHeight);
+}
+
+function renderAnswerMarkdown(text) {
+  const withLinks = (text || '').replace(/\[source:\s*([^\]:]+(?:[\\/][^\]:]+)*):(\d+)\]/g, (_m, file, line) => {
+    const safeFile = escHtml(file);
+    return `<a href="#" class="citation-link" data-file="${safeFile}" data-line="${line}">[source: ${safeFile}:${line}]</a>`;
+  });
+  return marked.parse(withLinks);
+}
+
+function bindCitationLinks(root) {
+  root.querySelectorAll('.citation-link').forEach((link) => {
+    link.onclick = (ev) => {
+      ev.preventDefault();
+      openSourceFromCitation(link.dataset.file, Number(link.dataset.line || '1'));
+    };
+  });
+}
+
+function openSourceFromCitation(file, line=1) {
+  highlightSidebarFile(file);
+  fillQuery(`Explain ${file} around line ${line}`);
+}
+
+function highlightSidebarFile(file) {
+  document.querySelectorAll('.file-item').forEach((el) => {
+    el.classList.toggle('active', el.dataset.file === file);
+    if (el.dataset.file === file) {
+      el.scrollIntoView({block: 'nearest'});
+    }
+  });
+}
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+  document.querySelectorAll('.panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `panel_${view}`);
+  });
+  if (view === 'graph' && indexed) {
+    loadGraph();
+  }
+}
+
+function setGraphMode(mode) {
+  graphMode = mode;
+  document.getElementById('graphModeNote').textContent =
+    mode === 'connected'
+      ? 'Showing connected files first for readability.'
+      : 'Showing all files, including isolated ones.';
+  if (graphCache) {
+    renderGraph(graphCache);
+  }
+}
+
+function renderRepoSwitcher(repos = [], activeRepoId = null) {
+  const select = document.getElementById('repoSwitcher');
+  if (!select) return;
+  if (!repos.length) {
+    select.innerHTML = '<option value="">No saved repos</option>';
+    return;
+  }
+  select.innerHTML = repos.map(repo => `
+    <option value="${repo.repo_id}" ${repo.repo_id === activeRepoId ? 'selected' : ''}>
+      ${escHtml(repo.repo_name)} · ${repo.file_count || 0} files
+    </option>
+  `).join('');
+}
+
+async function activateRepo(repoId) {
+  if (!repoId) return;
+  const resp = await fetch(`/api/repos/${encodeURIComponent(repoId)}/activate`, {method:'POST'});
+  if (!resp.ok) {
+    toast('Could not switch repo', 'err');
+    return;
+  }
+  const data = await resp.json();
+  indexed = true;
+  showRepoInfo(data.repo);
+  renderFiles(data.files || []);
+  renderRepoSwitcher((await fetch('/api/repos').then(r=>r.json())).repos || [], repoId);
+  setStatus('ready', data.repo.repo_name);
+  enableQuery(true);
+  loadHistory();
+  loadGraph();
+  toast(`Switched to ${data.repo.repo_name}`, 'ok');
+}
+
+async function runSearch() {
+  if (!indexed) { toast('Index a repo first', 'err'); return; }
+  const keyword = document.getElementById('searchInput').value.trim();
+  if (!keyword) return;
+  const resultsEl = document.getElementById('searchResults');
+  resultsEl.innerHTML = '<div style="color:var(--dim)">Searching…</div>';
+  const resp = await fetch('/api/search', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      keyword,
+      regex: document.getElementById('searchRegex').checked,
+      case_sensitive: document.getElementById('searchCase').checked,
+      max_results: 100
+    })
+  });
+  const data = await resp.json();
+  if (!data.length) {
+    resultsEl.innerHTML = '<div style="color:var(--dim)">No matches found.</div>';
+    return;
+  }
+  resultsEl.innerHTML = data.map(hit => `
+    <div class="search-hit" onclick="fillQueryAndSend(${JSON.stringify(`Explain ${hit.file}:${hit.line_no} and why it matters`)})">
+      <div class="search-hit-file">${escHtml(hit.file)}</div>
+      <div class="search-hit-line">Line ${hit.line_no}</div>
+      <div class="search-hit-text">${escHtml(hit.line_content)}</div>
+    </div>
+  `).join('');
+}
+
+async function loadGraph() {
+  if (!indexed) {
+    renderGraphMessage('Index or activate a repo first to see its dependency graph.');
+    return;
+  }
+  const meta = document.getElementById('graphMeta');
+  meta.innerHTML = '<div>Loading graph…</div>';
+  try {
+    const resp = await fetch('/api/graph');
+    if (!resp.ok) {
+      throw new Error(`Graph request failed (${resp.status})`);
+    }
+    graphCache = await resp.json();
+    if (!graphCache.indexed) {
+      renderGraphMessage(graphCache.message || 'Index or activate a repo first to see its dependency graph.');
+      return;
+    }
+    renderGraph(graphCache);
+  } catch (err) {
+    renderGraphMessage(err && err.message ? err.message : 'Could not load graph');
+  }
+}
+
+function renderGraph(data) {
+  let nodes = (data.nodes || []).map(d => ({...d}));
+  let links = (data.links || []).map(d => ({...d}));
+  if (!nodes.length) {
+    renderGraphMessage('No graph nodes available for this repo yet.');
+    return;
+  }
+  if (graphMode === 'connected' && links.length) {
+    const connectedIds = new Set();
+    links.forEach(link => {
+      connectedIds.add(link.source);
+      connectedIds.add(link.target);
+    });
+    const connectedNodes = nodes.filter(node => connectedIds.has(node.id));
+    if (connectedNodes.length) {
+      nodes = connectedNodes;
+      links = links.filter(link => connectedIds.has(link.source) && connectedIds.has(link.target));
+    }
+  }
+  if (!window.d3) {
+    renderGraphFallback(nodes, links);
+    return;
+  }
+
+  const svg = d3.select('#graphSvg');
+  svg.selectAll('*').remove();
+  const width = svg.node().clientWidth || 800;
+  const height = svg.node().clientHeight || 520;
+
+  svg.attr('viewBox', `0 0 ${width} ${height}`);
+  const root = svg.append('g');
+
+  const zoom = d3.zoom()
+    .scaleExtent([0.35, 3])
+    .on('zoom', (event) => root.attr('transform', event.transform));
+  svg.call(zoom);
+
+  const simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(d => 45 + Math.min(90, ((d.source.degree || 0) + (d.target.degree || 0)) * 3)))
+    .force('charge', d3.forceManyBody().strength(d => -90 - ((d.degree || 0) * 22)))
+    .force('center', d3.forceCenter(width / 2, height / 2));
+  simulation.force('collision', d3.forceCollide().radius(d => Math.max(12, 8 + (d.degree || 0) * 1.5)));
+
+  const link = root.append('g')
+    .attr('stroke', '#2a3445')
+    .attr('stroke-opacity', 0.55)
+    .selectAll('line')
+    .data(links)
+    .enter()
+    .append('line')
+    .attr('stroke-width', d => Math.max(1, Math.min(2.5, 0.8 + (((d.source.degree || 0) + (d.target.degree || 0)) / 10))));
+
+  const labelNodes = nodes
+    .slice()
+    .sort((a, b) => (b.degree || 0) - (a.degree || 0))
+    .slice(0, Math.min(18, nodes.length));
+
+  const labels = root.append('g')
+    .selectAll('text')
+    .data(labelNodes)
+    .enter()
+    .append('text')
+    .attr('fill', '#9fb3c8')
+    .attr('font-size', 10)
+    .attr('font-family', 'JetBrains Mono')
+    .attr('pointer-events', 'none')
+    .text(d => d.label);
+
+  const node = root.append('g')
+    .selectAll('circle')
+    .data(nodes)
+    .enter()
+    .append('circle')
+    .attr('r', d => Math.max(4, Math.min(15, 4 + (d.degree || 0) * 0.8)))
+    .attr('fill', d => d.degree > 6 ? '#3fb950' : d.in_degree > d.out_degree ? '#d29922' : '#58a6ff')
+    .attr('stroke', '#c9d1d9')
+    .attr('stroke-width', 1)
+    .style('cursor', 'pointer')
+    .on('mouseenter', (_, d) => {
+      labels
+        .filter(n => n.id === d.id)
+        .attr('fill', '#ffffff')
+        .attr('font-size', 11);
+    })
+    .on('mouseleave', (_, d) => {
+      labels
+        .filter(n => n.id === d.id)
+        .attr('fill', '#9fb3c8')
+        .attr('font-size', 10);
+    })
+    .on('click', (_, d) => {
+      document.getElementById('graphMeta').innerHTML = `
+        <div class="graph-file">${escHtml(d.path)}</div>
+        <div>Degree: ${d.degree || 0}</div>
+        <div>Imports: ${d.out_degree || 0}</div>
+        <div>Imported by: ${d.in_degree || 0}</div>
+        <div class="tool-actions">
+          <button class="btn" style="width:auto" onclick="fillQueryAndSend(${JSON.stringify(`Explain the role of ${d.path} and what depends on it`)})">Ask About File</button>
+        </div>
+      `;
+    })
+    .call(d3.drag()
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x; d.fy = d.y;
+      })
+      .on('drag', (event, d) => {
+        d.fx = event.x; d.fy = event.y;
+      })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null; d.fy = null;
+      }));
+
+  simulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y);
+    node
+      .attr('cx', d => d.x)
+      .attr('cy', d => d.y);
+    labels
+      .attr('x', d => d.x + 10)
+      .attr('y', d => d.y + 4);
+  });
+
+  document.getElementById('graphMeta').innerHTML = `
+    <div>${nodes.length} nodes</div>
+    <div>${links.length} links</div>
+    <div>${graphMode === 'connected' ? 'Connected subgraph' : 'Full graph'} view.</div>
+    <div>Click a node to inspect it.</div>
+  `;
+}
+
+function renderGraphMessage(message) {
+  const svg = document.getElementById('graphSvg');
+  svg.innerHTML = `
+    <text x="50%" y="50%" fill="#6e7b8e" text-anchor="middle" font-size="14" font-family="JetBrains Mono">
+      ${escHtml(message)}
+    </text>
+  `;
+  document.getElementById('graphMeta').innerHTML = `<div>${escHtml(message)}</div>`;
+}
+
+function renderGraphFallback(nodes, links) {
+  const svg = document.getElementById('graphSvg');
+  const width = svg.clientWidth || 800;
+  const height = svg.clientHeight || 520;
+  const cx = width / 2;
+  const cy = height / 2;
+  const radius = Math.max(120, Math.min(width, height) / 2 - 50);
+
+  const positioned = nodes.map((node, index) => {
+    const angle = (index / Math.max(nodes.length, 1)) * Math.PI * 2;
+    return {
+      ...node,
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+    };
+  });
+  const map = Object.fromEntries(positioned.map(node => [node.id, node]));
+
+  const linkMarkup = links
+    .map(link => {
+      const src = map[link.source];
+      const dst = map[link.target];
+      if (!src || !dst) return '';
+      return `<line x1="${src.x}" y1="${src.y}" x2="${dst.x}" y2="${dst.y}" stroke="#2a3445" stroke-width="1" />`;
+    })
+    .join('');
+
+  const nodeMarkup = positioned
+    .map(node => `
+      <g onclick='selectGraphNode(${JSON.stringify(encodeURIComponent(JSON.stringify(node)))})' style="cursor:pointer">
+        <circle cx="${node.x}" cy="${node.y}" r="${Math.max(4, Math.min(12, 4 + (node.degree || 0)))}" fill="#58a6ff" stroke="#c9d1d9" stroke-width="1" />
+      </g>
+    `)
+    .join('');
+
+  svg.innerHTML = `<g>${linkMarkup}${nodeMarkup}</g>`;
+  document.getElementById('graphMeta').innerHTML = `
+    <div>${nodes.length} nodes</div>
+    <div>${links.length} links</div>
+    <div>${graphMode === 'connected' ? 'Connected subgraph' : 'Full graph'} view.</div>
+    <div>D3 was unavailable, so this repo is shown in fallback layout.</div>
+  `;
+}
+
+function selectGraphNode(serialized) {
+  const d = JSON.parse(decodeURIComponent(serialized));
+  document.getElementById('graphMeta').innerHTML = `
+    <div class="graph-file">${escHtml(d.path)}</div>
+    <div>Degree: ${d.degree || 0}</div>
+    <div>Imports: ${d.out_degree || 0}</div>
+    <div>Imported by: ${d.in_degree || 0}</div>
+    <div class="tool-actions">
+      <button class="btn" style="width:auto" onclick="fillQueryAndSend(${JSON.stringify(`Explain the role of ${d.path} and what depends on it`)})">Ask About File</button>
+    </div>
+  `;
+}
+
+async function runDiffAnalysis() {
+  if (!indexed) { toast('Index a repo first', 'err'); return; }
+  const diff = document.getElementById('diffInput').value.trim();
+  const query = document.getElementById('diffQuestion').value.trim() || 'What breaks if I apply this diff?';
+  if (!diff) { toast('Paste a diff first', 'err'); return; }
+  const resultEl = document.getElementById('diffResult');
+  resultEl.innerHTML = '<div style="color:var(--dim)">Analyzing diff…</div>';
+  const resp = await fetch('/api/diff-analyze', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({diff, query})
+  });
+  const data = await resp.json();
+  resultEl.innerHTML = marked.parse(data.text || 'No response.');
+}
+
+function downloadPdf() {
+  if (!indexed) { toast('Index a repo first', 'err'); return; }
+  window.location.href = '/api/export/pdf';
+}
+
+async function readSseStream(stream, onEvent) {
+  const reader = stream.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, {stream: true});
+    const normalized = buf.replace(/\r\n/g, '\n');
+    const parts = normalized.split('\n\n');
+    buf = parts.pop() || '';
+
+    for (const part of parts) {
+      const lines = part.split('\n').map(l => l.trimEnd());
+      const dataLines = lines.filter(l => l.startsWith('data:'));
+      if (!dataLines.length) continue;
+      const eventLine = lines.find(l => l.startsWith('event:'));
+      const event = eventLine ? eventLine.replace('event:','').trim() : 'message';
+      const payload = dataLines.map(l => l.replace('data:','').trim()).join('\n');
+      let data;
+      try { data = JSON.parse(payload); } catch { continue; }
+      onEvent(event, data);
+    }
+  }
+}
+
+// ── Progress / status ───────────────────────────────────────────────
+function showProgress(show) {
+  document.getElementById('progressWrap').classList.toggle('visible', show);
+  document.getElementById('ingestSteps').classList.toggle('visible', show);
+}
+
+function updateProgress(pct, msg) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressMsg').textContent = msg;
+}
+
+function resetIngestSteps() {
+  const list = document.getElementById('ingestStepList');
+  document.getElementById('ingestPhaseLabel').textContent = 'Starting';
+  list.innerHTML = INGEST_PHASES.map(step => `
+    <div class="ingest-step pending" data-phase="${step.id}">
+      <div class="ingest-step-dot">${step.icon}</div>
+      <div class="ingest-step-text">
+        <div class="ingest-step-name">${step.label}</div>
+        <div class="ingest-step-note">Waiting</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateIngestSteps(phase, note='') {
+  const label = document.getElementById('ingestPhaseLabel');
+  let activeSeen = false;
+
+  document.querySelectorAll('#ingestStepList .ingest-step').forEach((el) => {
+    const isActive = el.dataset.phase === phase;
+    if (!activeSeen && !isActive) {
+      const phaseIndex = INGEST_PHASES.findIndex(s => s.id === phase);
+      const currentIndex = INGEST_PHASES.findIndex(s => s.id === el.dataset.phase);
+      if (phaseIndex > currentIndex) {
+        el.className = 'ingest-step done';
+        el.querySelector('.ingest-step-dot').textContent = '✓';
+        const noteEl = el.querySelector('.ingest-step-note');
+        if (noteEl.textContent === 'Waiting' || noteEl.textContent === 'In progress') {
+          noteEl.textContent = 'Complete';
+        }
+        return;
+      }
+    }
+
+    if (isActive) {
+      activeSeen = true;
+      el.className = 'ingest-step active';
+      el.querySelector('.ingest-step-dot').textContent = '●';
+      el.querySelector('.ingest-step-note').textContent = note || 'In progress';
+      label.textContent = el.querySelector('.ingest-step-name').textContent;
+    } else if (!el.classList.contains('done')) {
+      el.className = 'ingest-step pending';
+      const step = INGEST_PHASES.find(s => s.id === el.dataset.phase);
+      el.querySelector('.ingest-step-dot').textContent = step ? step.icon : '•';
+      if (el.querySelector('.ingest-step-note').textContent !== 'Complete') {
+        el.querySelector('.ingest-step-note').textContent = 'Waiting';
+      }
+    }
+  });
+}
+
+function finishIngestSteps(note='Ready') {
+  document.getElementById('ingestPhaseLabel').textContent = 'Ready';
+  document.querySelectorAll('#ingestStepList .ingest-step').forEach((el) => {
+    el.className = 'ingest-step done';
+    el.querySelector('.ingest-step-dot').textContent = '✓';
+    el.querySelector('.ingest-step-note').textContent = note;
+  });
+}
+
+function failIngestSteps(message='Failed') {
+  const active = document.querySelector('#ingestStepList .ingest-step.active') ||
+    document.querySelector('#ingestStepList .ingest-step.pending');
+  document.getElementById('ingestPhaseLabel').textContent = 'Failed';
+  if (!active) return;
+  active.className = 'ingest-step error';
+  active.querySelector('.ingest-step-dot').textContent = '!';
+  active.querySelector('.ingest-step-note').textContent = message;
+}
+
+function setStatus(type, text) {
+  const dot = document.getElementById('statusDot');
+  const label = document.getElementById('statusText');
+  dot.className = 'status-dot' + (type ? ' ' + type : '');
+  label.textContent = text;
+}
+
+function setBusy(b) {
+  busy = b;
+  const qi = document.getElementById('queryInput');
+  const sb = document.getElementById('sendBtn');
+  if (indexed) {
+    qi.disabled = b;
+    sb.disabled = b;
+  }
+  if (b) setStatus('busy', 'Working…');
+  else if (indexed) setStatus('ready', document.getElementById('repoName').textContent);
+}
+
+function enableQuery(on) {
+  document.getElementById('queryInput').disabled = !on;
+  document.getElementById('sendBtn').disabled = !on;
+}
+
+// ── Repo info / files ────────────────────────────────────────────────
+function showRepoInfo(data) {
+  document.getElementById('repoInfo').classList.add('visible');
+  document.getElementById('repoName').textContent = data.repo_name;
+  document.getElementById('fileCount').textContent = data.file_count;
+  document.getElementById('chunkCount').textContent = data.chunk_count;
+  document.getElementById('graphNodes').textContent = (data.graph_stats||{}).nodes || 0;
+  document.getElementById('graphEdges').textContent = (data.graph_stats||{}).edges || 0;
+}
+
+function renderFiles(files) {
+  const tree = document.getElementById('fileTree');
+  if (!files || !files.length) return;
+  tree.innerHTML = files.map(f => {
+    const ext = f.split('.').pop();
+    return `<div class="file-item" data-file="${escHtml(f)}" onclick="highlightSidebarFile('${f}'); fillQuery('Explain the file ${f}')">
+      <span class="file-ext ${ext}">.${ext}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis">${f}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── History ──────────────────────────────────────────────────────────
+async function loadHistory() {
+  try {
+    const data = await fetch('/api/history?limit=20').then(r=>r.json());
+    const list = document.getElementById('historyList');
+    if (!data.length) {
+      list.innerHTML = '<div style="color:var(--dim);font-size:11px;padding:4px 0">No history yet</div>';
+      return;
+    }
+    list.innerHTML = data.map(e =>
+      `<div class="history-item" onclick="fillQueryAndSend(${JSON.stringify(e.query)})">${escHtml(e.query)}</div>`
+    ).join('');
+  } catch {}
+}
+
+async function clearHistory() {
+  await fetch('/api/history', {method:'DELETE'});
+  loadHistory();
+  toast('History cleared');
+}
+
+// ── Input helpers ────────────────────────────────────────────────────
+function fillQuery(el) {
+  setView('query');
+  const text = typeof el === 'string' ? el : el.textContent;
+  const qi = document.getElementById('queryInput');
+  qi.value = text;
+  qi.focus();
+  autoResize(qi);
+}
+
+function fillQueryAndSend(text) {
+  fillQuery(text);
+  sendQuery();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendQuery();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────
+function toast(msg, type='') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────
+(async () => {
+  try {
+    const status = await fetch('/api/status').then(r=>r.json());
+    renderRepoSwitcher(status.repos || [], status.active_repo_id || '');
+    if (status.indexed) {
+      indexed = true;
+      setStatus('ready', status.repo_name);
+      enableQuery(true);
+      showRepoInfo({
+        repo_id: status.repo_id,
+        repo_name: status.repo_name,
+        file_count: status.file_count,
+        chunk_count: status.chunk_count,
+        graph_stats: status.graph_stats,
+      });
+      document.getElementById('repoInfo').classList.add('visible');
+      const files = await fetch('/api/files').then(r=>r.json());
+      renderFiles(files);
+      loadHistory();
+      loadGraph();
+    }
+  } catch {}
+
+  // Configure marked
+  marked.setOptions({
+    breaks: true,
+    gfm: true,
+  });
+})();
+</script>
+</body>
+</html>
